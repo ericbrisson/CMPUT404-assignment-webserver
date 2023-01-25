@@ -226,6 +226,9 @@ class MyWebServer(socketserver.BaseRequestHandler):
         # take in the byte string of the request, decode it to string
         self.request_string = self.data.decode("utf-8")
 
+        # set default protocol to HTTP/1.1
+        self.protocol = "HTTP/1.1"
+
         # then attempt to parse it
         try:
             split_req = self.request_string.split("\r\n")
