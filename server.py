@@ -29,6 +29,7 @@ from time import mktime
 #
 # run: python freetests.py
 
+# Modifications from original version:
 # Copyright 2023 Eric Brisson
 
 # Licensed under the Apache License, Version 2.0 (the "License");

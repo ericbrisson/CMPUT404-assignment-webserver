@@ -30,3 +30,5 @@ examples thus some of the code is Copyright © 2001-2013 Python
 Software Foundation; All Rights Reserved under the PSF license (GPL
 compatible) http://docs.python.org/2/library/socketserver.html
 
+New contributions from:
+* Eric Brisson, 2023 --> license included in LICENSE file and at top of server.py
