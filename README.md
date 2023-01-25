@@ -1,8 +1,11 @@
 CMPUT404-assignment-webserver
-Eric Brisson
-ebrisson (CCID)
-1615620 (student number)
 =============================
+
+* Eric Brisson
+* ebrisson (CCID)
+* 1615620 (student number)
+
+------------------------------
 
 CMPUT404-assignment-webserver
 
