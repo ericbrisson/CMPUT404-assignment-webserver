@@ -62,27 +62,15 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         self.data = self.request.recv(1024).strip()
         #print ("Got a request of: %s\n" % self.data)
-        self.working_request = HTTPRequest(self.data)
-        self.prepare_response()
+        self.handle_request()
         self.request.sendall(bytearray(self.working_response,'utf-8'))
         #self.print_response()
         
-        
-    def prepare_response(self):
-        # check for proper method
-        if self.working_request.method not in ["GET"]:
-            self.method_not_allowed_resp()
-            return
-            
-        else:
-            self.get_file_resp()
-            return
-
     def bad_request_resp(self):
         self.working_response = ""
 
         # add protocol, status code, and status name to response
-        self.working_response += f"{self.working_request.protocol} 400 Bad Request\r\n"
+        self.working_response += f"{self.protocol} 400 Bad Request\r\n"
 
         # prepare body
         body = "<!doctype html><html><body><h1>400 Bad Request</h1></body></html>"
@@ -102,7 +90,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.working_response = ""
 
         # add protocol, status code, and status name to response
-        self.working_response += f"{self.working_request.protocol} 405 Method Not Allowed\r\n"
+        self.working_response += f"{self.protocol} 405 Method Not Allowed\r\n"
 
         # prepare body
         body = "<!doctype html><html><body><h1>405 Method Not Allowed</h1></body></html>"
@@ -122,7 +110,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.working_response = ""
 
         # add protocol, status code, and status name to response
-        self.working_response += f"{self.working_request.protocol} 404 Not Found\r\n"
+        self.working_response += f"{self.protocol} 404 Not Found\r\n"
 
         # prepare body
         body = "<!doctype html><html><body><h1>404 Not Found</h1></body></html>"
@@ -142,7 +130,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.working_response = ""
 
         # add protocol, status code, and status name to response
-        self.working_response += f"{self.working_request.protocol} 301 Moved Permanently\r\n"
+        self.working_response += f"{self.protocol} 301 Moved Permanently\r\n"
 
         # prepare body
         body = "<!doctype html><html><body><h1>301 Moved Permanently</h1></body></html>"
@@ -154,14 +142,19 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.working_response += f"Date: {format_date_time(stamp)}\r\n" # Date -> Wed, 22 Oct 2008 10:52:40 GMT
         self.working_response += f"Content-Type: text/html\r\n" # Content-Type 
         self.working_response += f"Content-Length: {length}\r\n" # Content-Length
-        self.working_response += f"Location: http://127.0.0.1:8080{self.working_request.path}/\r\n"
+        self.working_response += f"Location: http://127.0.0.1:8080{self.path}/\r\n"
         self.working_response += f"\r\n" # Terminator
 
         self.working_response += f"{body}\r\n"
 
-    def get_file_resp(self):
+    def handle_request(self):
+        # parse request
+        self.working_request = self.parse_request()
+        if not self.working_request:
+            return
+
         # file retrieval logic
-        file_path = "./www" + self.working_request.path
+        file_path = "./www" + self.path
         if ".." in file_path:
             self.not_found_resp()
             return
@@ -195,7 +188,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
             return
 
         # add protocol, status code, and status name to response
-        self.working_response += f"{self.working_request.protocol} 200 OK\r\n"
+        self.working_response += f"{self.protocol} 200 OK\r\n"
 
         # prepare body
         body = file.read()
@@ -211,45 +204,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         self.working_response += f"{body}\r\n"
         return
-        
-    def print_response(self):
-        print("#" * 80)
-        print("RESPONSE:")
-        print(self.working_response)
-        print("#" * 80)
-
-class HTTPRequest:
-    def __init__(self, request):
-        # pass in a byte string of the request
-        self.request_byte_string = request
-        self.request_string = request.decode("utf-8")
-
-        self.method = None
-        self.path = None
-        self.protocol = None
-        self.headers = None
-
-        self.parse_request()
-        #self.print_request()
-
-    def parse_request(self):
-        # given the HTTP request in a string, parse out all the component
-        split_req = self.request_string.split("\r\n")
-
-        # first element in split_req will contain method, path, and protocol
-        self.method = split_req[0].split()[0]
-        self.path = split_req[0].split()[1]
-        self.protocol = split_req[0].split()[2]
-
-        # rest of split_req will contain headers
-        headers = {}
-        for each_header in split_req[1:]:
-            header = each_header.split(":")[0].strip()
-            value = each_header.split(":")[1].strip()
-            headers[header] = value
-
-        self.headers = headers
-
+    
     def print_request(self):
         print('-' * 80)
         print("REQUEST:")
@@ -260,6 +215,44 @@ class HTTPRequest:
         for header in self.headers.keys():
             print(header + ": " + self.headers[header])
         print('-' * 80)
+    
+    def print_response(self):
+        print("#" * 80)
+        print("RESPONSE:")
+        print(self.working_response)
+        print("#" * 80)
+
+    def parse_request(self):
+        # take in the byte string of the request, decode it to string
+        self.request_string = self.data.decode("utf-8")
+
+        # then attempt to parse it
+        try:
+            split_req = self.request_string.split("\r\n")
+
+            # first element in split_req will contain method, path, and protocol
+            self.method = split_req[0].split()[0]
+            self.path = split_req[0].split()[1]
+            self.protocol = split_req[0].split()[2]
+
+            if self.method not in ['GET']:
+                self.method_not_allowed_resp()
+                return False
+
+            # rest of split_req will contain headers
+            headers = {}
+            for each_header in split_req[1:]:
+                header = each_header.split(":")[0].strip()
+                value = each_header.split(":")[1].strip()
+                headers[header] = value
+
+            self.headers = headers
+
+            return True
+
+        except:
+            self.bad_request_resp()
+            return False
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
