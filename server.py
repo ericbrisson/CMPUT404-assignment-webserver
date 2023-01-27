@@ -102,6 +102,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.working_response += f"Date: {format_date_time(stamp)}\r\n" # Date -> Wed, 22 Oct 2008 10:52:40 GMT
         self.working_response += f"Content-Type: text/html\r\n" # Content-Type 
         self.working_response += f"Content-Length: {length}\r\n" # Content-Length
+        self.working_response += f"Allow: GET\r\n" # Need to indicate allowed methods
         self.working_response += f"\r\n" # Terminator
 
         self.working_response += f"{body}\r\n"
@@ -142,7 +143,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.working_response += f"Date: {format_date_time(stamp)}\r\n" # Date -> Wed, 22 Oct 2008 10:52:40 GMT
         self.working_response += f"Content-Type: text/html\r\n" # Content-Type 
         self.working_response += f"Content-Length: {length}\r\n" # Content-Length
-        self.working_response += f"Location: http://127.0.0.1:8080{self.path}/\r\n"
+        self.working_response += f"Location: http://{self.headers.get('host', '127.0.0.1')}:8080{self.path}/\r\n"
         self.working_response += f"\r\n" # Terminator
 
         self.working_response += f"{body}\r\n"
@@ -153,6 +154,11 @@ class MyWebServer(socketserver.BaseRequestHandler):
         if not self.working_request:
             return
 
+        if "Host" not in self.headers.keys():
+            self.bad_request_resp()
+            return False
+
+        # self.print_request()
         # file retrieval logic
         file_path = "./www" + self.path
         if ".." in file_path:
@@ -184,9 +190,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
         elif file_path[-4:] == ".css":
             content_type = "text/css"
         else:
-            self.not_found_resp()
-            return
-
+            content_type="application/octet-stream"
+        
         # add protocol, status code, and status name to response
         self.working_response += f"{self.protocol} 200 OK\r\n"
 
