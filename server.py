@@ -157,7 +157,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         if "Host" not in self.headers.keys():
             self.bad_request_resp()
-            return False
+            return
 
         # self.print_request()
         # file retrieval logic
