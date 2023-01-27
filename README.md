@@ -54,4 +54,7 @@ which methods are allowed. In the case of this assignment, only GET requests are
 
     * https://www.rfc-editor.org/rfc/rfc7231#section-7.4.1
 
+* If the Host header provided in the request is not 127.0.0.1 or localhost, the web server will bounce the request
+and respond with a 404 Not Found.
+
 

@@ -159,6 +159,11 @@ class MyWebServer(socketserver.BaseRequestHandler):
             self.bad_request_resp()
             return
 
+        if "127.0.0.1" not in self.headers["Host"] and "localhost" not in self.headers["Host"]:
+            self.print_request()
+            self.not_found_resp()
+            return
+
         # self.print_request()
         # file retrieval logic
         file_path = "./www" + self.path
